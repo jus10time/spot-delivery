@@ -1,0 +1,10 @@
+services:
+  spot-delivery:
+    build: .
+    container_name: spot-delivery
+    ports:
+      - "${SPOT_DELIVERY_PORT:-3040}:3040"
+    volumes:
+      - ./outputs:/app/outputs
+      - ./uploads:/app/uploads
+    restart: unless-stopped

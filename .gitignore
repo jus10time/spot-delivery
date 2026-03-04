@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
+outputs/
+*.log
+*.pid
+
+uploads/*
+!uploads/.gitkeep
+!uploads/source/
+!uploads/source/.gitkeep
+!uploads/slate/
+!uploads/slate/.gitkeep

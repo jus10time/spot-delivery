@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spot Delivery</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div class="hero-row">
+        <div>
+          <p class="kicker">Spot Delivery</p>
+          <h1>Broadcast Deliverable Builder</h1>
+          <p class="sub">Generate slate-based deliverables from DNx OP1a or other source files.</p>
+        </div>
+        <div class="upload-actions">
+          <a class="secondary-btn nav-link" href="/profiles">Open Profile Builder</a>
+          <a class="secondary-btn nav-link" href="/slates">Open Slate Library</a>
+        </div>
+      </div>
+      {% if not drawtext_supported %}
+      <p class="warning-banner">Slate text burn-in is unavailable on this machine (FFmpeg drawtext filter missing).</p>
+      {% endif %}
+    </header>
+
+    <form id="renderForm" class="panel form-grid">
+      <h2 class="section-title wide">1. Delivery Setup</h2>
+
+      <div class="field wide">
+        <label for="input_path">Input File Path</label>
+        <input id="input_path" name="input_path" type="text" placeholder="/path/to/source.mov" required />
+        <div class="upload-controls">
+          <input id="sourceFilePicker" class="hidden-file-input" type="file" accept="video/*,.mov,.mxf,.mp4,.m4v,.avi,.mkv,.wmv,.mpg,.mpeg" />
+          <div class="upload-actions">
+            <button type="button" class="secondary-btn" id="pickSourceFileBtn">Select Source File...</button>
+            <p class="hint">or drag and drop source media below</p>
+          </div>
+          <div id="sourceDropZone" class="drop-zone">Drop source media file here to upload</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="output_dir">Output Directory</label>
+        <input id="output_dir" name="output_dir" type="text" value="./outputs" required />
+      </div>
+
+      <div class="field">
+        <label for="profile_primary">Profile 1</label>
+        <select id="profile_primary" required>
+          {% for key, profile in profiles.items() %}
+          <option value="{{ key }}">{{ profile.label }} ({{ key }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="profile_secondary">Profile 2 (Optional)</label>
+        <select id="profile_secondary">
+          <option value="">None</option>
+          {% for key, profile in profiles.items() %}
+          <option value="{{ key }}">{{ profile.label }} ({{ key }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="spot_duration_mode">Spot Length</label>
+        <select id="spot_duration_mode">
+          <option value="auto">Use full source duration</option>
+          <option value="15">15 sec</option>
+          <option value="30">30 sec</option>
+          <option value="60">60 sec</option>
+        </select>
+      </div>
+
+      <h2 class="section-title wide">2. Slate</h2>
+
+      <div class="field wide">
+        <label for="slate_background_image">Slate Background</label>
+        <select id="slate_background_image">
+          <option value="">None (solid black slate)</option>
+        </select>
+        <div class="upload-controls">
+          <div class="upload-actions">
+            <button type="button" class="secondary-btn" id="refreshSlateChoicesBtn">Refresh Slate Choices</button>
+            <a class="secondary-btn nav-link" href="/slates">Manage Slate Library</a>
+          </div>
+          <p class="hint">Slate choices come from the Slate Library page.</p>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="client">Client (Slate Header)</label>
+        <input id="client" type="text" required />
+      </div>
+
+      <div class="field">
+        <label for="name">Name</label>
+        <input id="name" type="text" required />
+      </div>
+
+      <div class="field">
+        <label for="isci">ISCI Code</label>
+        <input id="isci" type="text" required />
+      </div>
+
+      <div class="field">
+        <label for="job_number">Job#</label>
+        <input id="job_number" type="text" required />
+      </div>
+
+      <div class="field">
+        <label for="date">Date</label>
+        <input id="date" type="date" required />
+      </div>
+
+      <div class="field">
+        <label for="length">Length (Slate Text)</label>
+        <input id="length" type="text" placeholder="00:00:30" required />
+      </div>
+
+      <div class="field">
+        <label for="audio">Audio (Slate Text)</label>
+        <input id="audio" type="text" placeholder="Stereo / 2.0" required />
+      </div>
+
+      <div class="field wide">
+        <p class="hint">Text placement controls (for custom background alignment)</p>
+      </div>
+
+      <div class="field">
+        <label for="header_y">Header Y</label>
+        <input id="header_y" type="number" value="120" />
+      </div>
+
+      <div class="field">
+        <label for="header_size">Header Font Size</label>
+        <input id="header_size" type="number" value="70" />
+      </div>
+
+      <div class="field">
+        <label for="left_x">Body Left X</label>
+        <input id="left_x" type="number" value="220" />
+      </div>
+
+      <div class="field">
+        <label for="top_y">Body Top Y</label>
+        <input id="top_y" type="number" value="320" />
+      </div>
+
+      <div class="field">
+        <label for="line_gap">Line Gap</label>
+        <input id="line_gap" type="number" value="72" />
+      </div>
+
+      <div class="field">
+        <label for="font_size">Body Font Size</label>
+        <input id="font_size" type="number" value="52" />
+      </div>
+
+      <div class="wide actions">
+        <button type="button" id="previewSlateBtn" class="secondary-btn">Preview Slate</button>
+        <button type="button" id="clearAllBtn" class="danger-btn">Clear All</button>
+        <button type="submit" id="submitBtn">Create Deliverable(s)</button>
+      </div>
+    </form>
+
+    <section class="panel" id="slatePreviewPanel">
+      <h2>Slate Preview</h2>
+      <p class="hint">Uses current slate values with Profile 1 settings.</p>
+      <img id="slatePreviewImage" alt="Slate preview" class="preview-image" />
+      <p id="slatePreviewMeta" class="hint"></p>
+    </section>
+
+    <section class="panel" id="statusPanel">
+      <h2>Status</h2>
+      <pre id="statusText">Ready.</pre>
+      <div id="downloadLinks" class="download-links"></div>
+    </section>
+  </main>
+
+  <script>
+    const LAST_SLATE_CHOICE_KEY = 'spot_delivery_last_slate_choice_v1';
+    const fieldIds = [
+      'input_path',
+      'output_dir',
+      'profile_primary',
+      'profile_secondary',
+      'spot_duration_mode',
+      'slate_background_image',
+      'client',
+      'name',
+      'isci',
+      'job_number',
+      'date',
+      'length',
+      'audio',
+      'header_y',
+      'header_size',
+      'left_x',
+      'top_y',
+      'line_gap',
+      'font_size'
+    ];
+
+    const form = document.getElementById('renderForm');
+    const statusText = document.getElementById('statusText');
+    const downloadLinks = document.getElementById('downloadLinks');
+    const submitBtn = document.getElementById('submitBtn');
+    const previewSlateBtn = document.getElementById('previewSlateBtn');
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    const slatePreviewImage = document.getElementById('slatePreviewImage');
+    const slatePreviewMeta = document.getElementById('slatePreviewMeta');
+
+    const pickSourceFileBtn = document.getElementById('pickSourceFileBtn');
+    const sourceFilePicker = document.getElementById('sourceFilePicker');
+    const sourceDropZone = document.getElementById('sourceDropZone');
+    const slateBackgroundSelect = document.getElementById('slate_background_image');
+    const refreshSlateChoicesBtn = document.getElementById('refreshSlateChoicesBtn');
+
+    const defaultValues = {};
+    fieldIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) defaultValues[id] = el.value;
+    });
+    if (!defaultValues.date) {
+      defaultValues.date = new Date().toISOString().slice(0, 10);
+    }
+
+    function setStatus(message) {
+      statusText.textContent = message;
+    }
+
+    function clearDownloadLinks() {
+      downloadLinks.innerHTML = '';
+    }
+
+    function renderDownloadLinks(results) {
+      clearDownloadLinks();
+      const withLinks = (results || []).filter((item) => item && item.download_url);
+      if (withLinks.length === 0) return;
+
+      const title = document.createElement('p');
+      title.className = 'hint';
+      title.textContent = 'Download rendered deliverable(s):';
+      downloadLinks.appendChild(title);
+
+      withLinks.forEach((item, index) => {
+        const row = document.createElement('div');
+        row.className = 'download-row';
+
+        const label = document.createElement('span');
+        label.className = 'download-label';
+        label.textContent = `${item.profile || `Output ${index + 1}`}: ${item.output_path || ''}`;
+
+        const link = document.createElement('a');
+        link.href = item.download_url;
+        link.className = 'download-btn';
+        link.textContent = 'Download';
+
+        row.appendChild(label);
+        row.appendChild(link);
+        downloadLinks.appendChild(row);
+      });
+    }
+
+    function renderSlateChoices(slates, selectedPath = '') {
+      const previous = selectedPath || slateBackgroundSelect.value || '';
+      slateBackgroundSelect.innerHTML = '';
+
+      const noneOption = document.createElement('option');
+      noneOption.value = '';
+      noneOption.textContent = 'None (solid black slate)';
+      slateBackgroundSelect.appendChild(noneOption);
+
+      (slates || []).forEach((slate) => {
+        const option = document.createElement('option');
+        option.value = slate.path;
+        option.textContent = slate.name;
+        slateBackgroundSelect.appendChild(option);
+      });
+
+      const hasPrevious = Array.from(slateBackgroundSelect.options).some((opt) => opt.value === previous);
+      slateBackgroundSelect.value = hasPrevious ? previous : '';
+    }
+
+    function getStoredSlateChoice() {
+      return localStorage.getItem(LAST_SLATE_CHOICE_KEY) || '';
+    }
+
+    function storeSlateChoice(value) {
+      if (!value) {
+        localStorage.removeItem(LAST_SLATE_CHOICE_KEY);
+        return;
+      }
+      localStorage.setItem(LAST_SLATE_CHOICE_KEY, value);
+    }
+
+    async function loadSlateChoices(options = {}) {
+      const {
+        preserveSelection = true,
+        showStatus = false,
+        preferredSelection = '',
+      } = options;
+      const selectedPath = preserveSelection
+        ? slateBackgroundSelect.value
+        : (preferredSelection || getStoredSlateChoice() || '');
+      try {
+        const res = await fetch('/api/slates');
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          if (showStatus) {
+            setStatus(`Slate choices error: ${data.error || 'Unknown failure'}`);
+          }
+          renderSlateChoices([], '');
+          return;
+        }
+        renderSlateChoices(data.slates || [], selectedPath);
+        if (showStatus) {
+          setStatus(`Loaded ${data.slates.length} slate choice(s).`);
+        }
+      } catch (err) {
+        if (showStatus) {
+          setStatus(`Slate choices error: ${err.message}`);
+        }
+      }
+    }
+
+    function applyFormState(values) {
+      fieldIds.forEach((id) => {
+        if (!(id in values)) return;
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (el.tagName === 'SELECT') {
+          const hasOption = Array.from(el.options).some((opt) => opt.value === values[id]);
+          if (!hasOption) return;
+        }
+        el.value = values[id];
+      });
+    }
+
+    function buildClearValues() {
+      const resetValues = { ...defaultValues };
+      resetValues.input_path = '';
+      resetValues.client = '';
+      resetValues.name = '';
+      resetValues.isci = '';
+      resetValues.job_number = '';
+      resetValues.length = '';
+      resetValues.audio = '';
+      resetValues.profile_secondary = '';
+      resetValues.date = new Date().toISOString().slice(0, 10);
+      return resetValues;
+    }
+
+    function resetFormForFreshLoad() {
+      applyFormState(buildClearValues());
+      clearPreview();
+      clearDownloadLinks();
+      loadSlateChoices({
+        preserveSelection: false,
+        showStatus: false,
+        preferredSelection: getStoredSlateChoice(),
+      });
+      setStatus('Ready.');
+    }
+
+    function clearPreview() {
+      slatePreviewImage.removeAttribute('src');
+      slatePreviewImage.style.display = 'none';
+      slatePreviewMeta.textContent = '';
+    }
+
+    function readSlatePayload() {
+      return {
+        client: document.getElementById('client').value.trim(),
+        name: document.getElementById('name').value.trim(),
+        isci: document.getElementById('isci').value.trim(),
+        job_number: document.getElementById('job_number').value.trim(),
+        date: document.getElementById('date').value,
+        length: document.getElementById('length').value.trim(),
+        audio: document.getElementById('audio').value.trim()
+      };
+    }
+
+    function readSlateLayoutPayload() {
+      return {
+        header_y: document.getElementById('header_y').value,
+        header_size: document.getElementById('header_size').value,
+        left_x: document.getElementById('left_x').value,
+        top_y: document.getElementById('top_y').value,
+        line_gap: document.getElementById('line_gap').value,
+        font_size: document.getElementById('font_size').value
+      };
+    }
+
+    function buildRenderPayload() {
+      const selectedProfiles = [];
+      const primary = document.getElementById('profile_primary').value;
+      const secondary = document.getElementById('profile_secondary').value;
+      if (primary) selectedProfiles.push(primary);
+      if (secondary && secondary !== primary) selectedProfiles.push(secondary);
+
+      return {
+        input_path: document.getElementById('input_path').value.trim(),
+        output_dir: document.getElementById('output_dir').value.trim(),
+        profiles: selectedProfiles,
+        spot_duration_mode: document.getElementById('spot_duration_mode').value,
+        slate_background_image: document.getElementById('slate_background_image').value,
+        slate: readSlatePayload(),
+        slate_layout: readSlateLayoutPayload()
+      };
+    }
+
+    async function uploadFile(file, endpoint, targetId, label) {
+      if (!file) return;
+      try {
+        setStatus(`${label}: uploading ${file.name}...`);
+        const payload = new FormData();
+        payload.append('file', file, file.name);
+
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          body: payload
+        });
+        let data = null;
+        try {
+          data = await res.json();
+        } catch (_err) {
+          setStatus(`${label}: request failed (HTTP ${res.status})`);
+          return;
+        }
+
+        if (!res.ok || !data.ok) {
+          setStatus(`${label}: ${data.error || 'Upload failed'}`);
+          return;
+        }
+
+        document.getElementById(targetId).value = data.path;
+        setStatus(`${label}: uploaded ${file.name}`);
+      } catch (err) {
+        setStatus(`${label}: ${err.message}`);
+      }
+    }
+
+    function attachDropZone(dropZoneEl, onFile) {
+      if (!dropZoneEl) return;
+
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach((eventName) => {
+        dropZoneEl.addEventListener(eventName, (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+        });
+      });
+
+      ['dragenter', 'dragover'].forEach((eventName) => {
+        dropZoneEl.addEventListener(eventName, () => {
+          dropZoneEl.classList.add('drag-over');
+        });
+      });
+
+      ['dragleave', 'drop'].forEach((eventName) => {
+        dropZoneEl.addEventListener(eventName, () => {
+          dropZoneEl.classList.remove('drag-over');
+        });
+      });
+
+      dropZoneEl.addEventListener('drop', (event) => {
+        const file = event.dataTransfer?.files?.[0];
+        if (!file) return;
+        onFile(file);
+      });
+    }
+
+    pickSourceFileBtn.addEventListener('click', () => {
+      sourceFilePicker.click();
+    });
+
+    sourceFilePicker.addEventListener('change', () => {
+      const file = sourceFilePicker.files && sourceFilePicker.files[0];
+      sourceFilePicker.value = '';
+      uploadFile(file, '/api/upload-source', 'input_path', 'Source upload');
+    });
+
+    refreshSlateChoicesBtn.addEventListener('click', () => {
+      loadSlateChoices({ preserveSelection: true, showStatus: true });
+    });
+
+    slateBackgroundSelect.addEventListener('change', () => {
+      storeSlateChoice(slateBackgroundSelect.value);
+    });
+
+    attachDropZone(sourceDropZone, (file) => {
+      uploadFile(file, '/api/upload-source', 'input_path', 'Source upload');
+    });
+
+    previewSlateBtn.addEventListener('click', async () => {
+      previewSlateBtn.disabled = true;
+      setStatus('Generating slate preview...');
+      try {
+        const payload = {
+          profile_key: document.getElementById('profile_primary').value,
+          slate_background_image: document.getElementById('slate_background_image').value,
+          slate: readSlatePayload(),
+          slate_layout: readSlateLayoutPayload()
+        };
+        const res = await fetch('/api/preview-slate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          setStatus(`Preview error: ${data.error || 'Unknown preview failure'}`);
+          return;
+        }
+        slatePreviewImage.src = data.image_data_url;
+        slatePreviewImage.style.display = 'block';
+        const warning = data.warning ? ` Warning: ${data.warning}` : '';
+        slatePreviewMeta.textContent = `Preview profile: ${data.profile}.${warning}`;
+        setStatus('Slate preview generated.');
+      } catch (err) {
+        setStatus(`Preview error: ${err.message}`);
+      } finally {
+        previewSlateBtn.disabled = false;
+      }
+    });
+
+    clearAllBtn.addEventListener('click', () => {
+      const confirmed = window.confirm('Clear all current delivery fields?');
+      if (!confirmed) return;
+      applyFormState(buildClearValues());
+      storeSlateChoice('');
+      clearPreview();
+      clearDownloadLinks();
+      loadSlateChoices({ preserveSelection: false, showStatus: false });
+      setStatus('Form cleared. Ready for next spot.');
+    });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      submitBtn.disabled = true;
+      setStatus('Rendering... this can take a while for ProRes outputs.');
+      const payload = buildRenderPayload();
+
+      try {
+        const res = await fetch('/api/render', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (!res.ok || !data.ok) {
+          clearDownloadLinks();
+          setStatus(`Error: ${data.error || 'Unknown render failure'}`);
+        } else {
+          const lines = ['Render complete.'];
+          data.results.forEach((r, i) => {
+            lines.push('');
+            lines.push(`Output ${i + 1}: ${r.profile}`);
+            lines.push(`Path: ${r.output_path}`);
+            lines.push(`Spot duration: ${r.spot_duration_sec}s`);
+            lines.push(`Total duration: ${r.total_duration_sec}s`);
+            lines.push(`Source audio: ${r.has_source_audio ? 'yes' : 'no (silence used)'}`);
+            if (r.slate_background_image) {
+              lines.push(`Slate background: ${r.slate_background_image}`);
+            }
+            if (r.warning) {
+              lines.push(`Warning: ${r.warning}`);
+            }
+          });
+          setStatus(lines.join('\n'));
+          renderDownloadLinks(data.results || []);
+        }
+      } catch (err) {
+        clearDownloadLinks();
+        setStatus(`Error: ${err.message}`);
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+    resetFormForFreshLoad();
+  </script>
+</body>
+</html>

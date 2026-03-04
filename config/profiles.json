@@ -1,0 +1,36 @@
+{
+  "profiles": {
+    "comcast_strata": {
+      "label": "Comcast / Strata",
+      "resolution": "1920x1080",
+      "fps": "30000/1001",
+      "keep_frame_rate": false,
+      "black_lead_sec": 1.0,
+      "slate_sec": 5.0,
+      "black_pre_spot_sec": 2.0,
+      "black_tail_sec": 1.0,
+      "video_codec": "prores_ks",
+      "output_extension": "mov",
+      "prores_profile": 2,
+      "pixel_format": "yuv422p",
+      "audio_codec": "pcm_s24le",
+      "audio_rate": 48000
+    },
+    "online_master": {
+      "label": "Online Master",
+      "resolution": "1920x1080",
+      "fps": "30000/1001",
+      "keep_frame_rate": false,
+      "black_lead_sec": 0.5,
+      "slate_sec": 3,
+      "black_pre_spot_sec": 1,
+      "black_tail_sec": 1,
+      "video_codec": "prores_ks",
+      "output_extension": "mov",
+      "prores_profile": 2,
+      "pixel_format": "yuv422p10le",
+      "audio_codec": "pcm_s24le",
+      "audio_rate": 48000
+    }
+  }
+}

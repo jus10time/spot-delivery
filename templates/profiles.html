@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spot Delivery Profiles</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div class="hero-row">
+        <div>
+          <p class="kicker">Spot Delivery</p>
+          <h1>Profile Builder</h1>
+          <p class="sub">Manage deliverable templates for codec, raster, frame rate, and timing.</p>
+        </div>
+        <a class="secondary-btn nav-link" href="/">Back To Delivery</a>
+      </div>
+    </header>
+
+    <section class="panel form-grid" id="profileBuilderPanel">
+      <h2 class="section-title wide">Profile Settings</h2>
+
+      <div class="field">
+        <label for="profile_builder_select">Existing Profile</label>
+        <select id="profile_builder_select"></select>
+      </div>
+
+      <div class="field">
+        <label for="profile_key">Profile Key</label>
+        <input id="profile_key" type="text" placeholder="new_profile_key" />
+      </div>
+
+      <div class="field">
+        <label for="profile_label">Label</label>
+        <input id="profile_label" type="text" placeholder="Deliverable Label" />
+      </div>
+
+      <div class="field">
+        <label for="profile_resolution">Frame Size</label>
+        <select id="profile_resolution">
+          <option value="1920x1080">1920×1080 (HD 1080)</option>
+          <option value="1280x720">1280×720 (HD 720)</option>
+          <option value="3840x2160">3840×2160 (4K UHD)</option>
+          <option value="4096x2160">4096×2160 (4K DCI)</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="profile_fps">Frame Rate</label>
+        <select id="profile_fps">
+          <option value="30000/1001">29.97 fps</option>
+          <option value="24000/1001">23.976 fps</option>
+          <option value="25/1">25 fps (PAL)</option>
+          <option value="30/1">30 fps</option>
+          <option value="60000/1001">59.94 fps</option>
+          <option value="60/1">60 fps</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="profile_keep_frame_rate">Frame Rate Mode</label>
+        <select id="profile_keep_frame_rate">
+          <option value="profile">Use profile frame rate</option>
+          <option value="source">Keep source frame rate (incoming)</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="profile_video_codec">Video Codec</label>
+        <select id="profile_video_codec">
+          <option value="prores_ks">ProRes</option>
+          <option value="dnxhd">DNxHD / DNxHR</option>
+          <option value="mpeg2video">MPEG-2 Video</option>
+          <option value="libx264">H.264</option>
+          <option value="libx265">H.265 / HEVC</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="profile_output_extension">Output Extension</label>
+        <select id="profile_output_extension">
+          <option value="mov">.mov</option>
+          <option value="mpg">.mpg</option>
+          <option value="mp4">.mp4</option>
+          <option value="mxf">.mxf</option>
+        </select>
+      </div>
+
+      <div class="field" id="proresProfileField">
+        <label for="profile_prores_profile">ProRes Profile</label>
+        <select id="profile_prores_profile">
+          <option value="0">ProRes 422 Proxy</option>
+          <option value="1">ProRes 422 LT</option>
+          <option value="2">ProRes 422</option>
+          <option value="3">ProRes 422 HQ</option>
+          <option value="4">ProRes 4444</option>
+          <option value="5">ProRes 4444 XQ</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="profile_pixel_format">Bit Depth</label>
+        <select id="profile_pixel_format">
+          <!-- populated dynamically based on codec -->
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="profile_audio_codec">Audio Codec</label>
+        <select id="profile_audio_codec">
+          <option value="pcm_s24le">PCM 24-bit (Uncompressed)</option>
+          <option value="pcm_s16le">PCM 16-bit (Uncompressed)</option>
+          <option value="mp2">MPEG Audio Layer II</option>
+          <option value="aac">AAC (Compressed)</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="profile_audio_rate">Audio Sample Rate</label>
+        <select id="profile_audio_rate">
+          <option value="48000">48 kHz</option>
+          <option value="44100">44.1 kHz</option>
+          <option value="96000">96 kHz</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="profile_black_lead_sec">Lead Black (sec)</label>
+        <input id="profile_black_lead_sec" type="number" step="0.1" value="1" />
+      </div>
+
+      <div class="field">
+        <label for="profile_slate_sec">Slate Duration (sec)</label>
+        <input id="profile_slate_sec" type="number" step="0.1" value="5" />
+      </div>
+
+      <div class="field">
+        <label for="profile_black_pre_spot_sec">Pre-Spot Black (sec)</label>
+        <input id="profile_black_pre_spot_sec" type="number" step="0.1" value="2" />
+      </div>
+
+      <div class="field">
+        <label for="profile_black_tail_sec">Tail Black (sec)</label>
+        <input id="profile_black_tail_sec" type="number" step="0.1" value="1" />
+      </div>
+
+      <div class="wide actions">
+        <button type="button" class="secondary-btn" id="loadProfileBtn">Load</button>
+        <button type="button" id="saveProfileBtn">Save Profile</button>
+        <button type="button" class="danger-btn" id="deleteProfileBtn">Delete Profile</button>
+      </div>
+    </section>
+
+    <section class="panel" id="statusPanel">
+      <h2>Status</h2>
+      <pre id="statusText">Ready.</pre>
+    </section>
+  </main>
+
+  <script>
+    // Pixel format options per codec — values are raw ffmpeg pix_fmt strings
+    const PIXEL_FORMATS = {
+      prores_ks: [
+        { value: 'yuv422p10le', label: '10-bit 4:2:2' },
+        { value: 'yuv422p',     label: '8-bit 4:2:2' },
+        { value: 'yuv444p10le', label: '10-bit 4:4:4' },
+        { value: 'yuv444p',     label: '8-bit 4:4:4' },
+      ],
+      dnxhd: [
+        { value: 'yuv422p10le', label: '10-bit 4:2:2' },
+        { value: 'yuv422p',     label: '8-bit 4:2:2' },
+      ],
+      mpeg2video: [
+        { value: 'yuv422p',     label: '8-bit 4:2:2' },
+        { value: 'yuv420p',     label: '8-bit 4:2:0' },
+      ],
+      libx264: [
+        { value: 'yuv420p',     label: '8-bit 4:2:0' },
+        { value: 'yuv420p10le', label: '10-bit 4:2:0' },
+        { value: 'yuv422p',     label: '8-bit 4:2:2' },
+      ],
+      libx265: [
+        { value: 'yuv420p',     label: '8-bit 4:2:0' },
+        { value: 'yuv420p10le', label: '10-bit 4:2:0' },
+        { value: 'yuv422p10le', label: '10-bit 4:2:2' },
+      ],
+    };
+
+    const FALLBACK_PIXEL_FORMATS = [
+      { value: 'yuv422p10le', label: '10-bit 4:2:2' },
+      { value: 'yuv422p',     label: '8-bit 4:2:2' },
+      { value: 'yuv444p10le', label: '10-bit 4:4:4' },
+      { value: 'yuv420p',     label: '8-bit 4:2:0' },
+    ];
+
+    const initialProfiles = {{ profiles | tojson }};
+    let profilesState = { ...initialProfiles };
+
+    const statusText            = document.getElementById('statusText');
+    const profileBuilderSelect  = document.getElementById('profile_builder_select');
+    const loadProfileBtn        = document.getElementById('loadProfileBtn');
+    const saveProfileBtn        = document.getElementById('saveProfileBtn');
+    const deleteProfileBtn      = document.getElementById('deleteProfileBtn');
+    const profileKeyInput       = document.getElementById('profile_key');
+    const profileLabelInput     = document.getElementById('profile_label');
+    const profileResolutionSel  = document.getElementById('profile_resolution');
+    const profileFpsSel         = document.getElementById('profile_fps');
+    const profileKeepFrameRateSel = document.getElementById('profile_keep_frame_rate');
+    const profileVideoCodecSel  = document.getElementById('profile_video_codec');
+    const profileOutputExtensionSel = document.getElementById('profile_output_extension');
+    const profileProresProfileSel = document.getElementById('profile_prores_profile');
+    const profilePixelFormatSel = document.getElementById('profile_pixel_format');
+    const profileAudioCodecSel  = document.getElementById('profile_audio_codec');
+    const profileAudioRateSel   = document.getElementById('profile_audio_rate');
+    const profileBlackLeadSecInput     = document.getElementById('profile_black_lead_sec');
+    const profileSlateSecInput         = document.getElementById('profile_slate_sec');
+    const profileBlackPreSpotSecInput  = document.getElementById('profile_black_pre_spot_sec');
+    const profileBlackTailSecInput     = document.getElementById('profile_black_tail_sec');
+    const proresProfileField    = document.getElementById('proresProfileField');
+
+    function setStatus(message) {
+      statusText.textContent = message;
+    }
+
+    // Set a <select> value; if the value isn't an existing option, append it as a custom entry
+    function setSelectValue(selectEl, value) {
+      const str = String(value);
+      selectEl.value = str;
+      if (selectEl.value !== str) {
+        const opt = document.createElement('option');
+        opt.value = str;
+        opt.textContent = str + ' (custom)';
+        selectEl.appendChild(opt);
+        selectEl.value = str;
+      }
+    }
+
+    function rebuildPixelFormatOptions(codec, currentValue) {
+      const options = PIXEL_FORMATS[codec] || FALLBACK_PIXEL_FORMATS;
+      profilePixelFormatSel.innerHTML = '';
+      options.forEach(({ value, label }) => {
+        const opt = document.createElement('option');
+        opt.value = value;
+        opt.textContent = label;
+        profilePixelFormatSel.appendChild(opt);
+      });
+      if (currentValue) setSelectValue(profilePixelFormatSel, currentValue);
+    }
+
+    function updateCodecDependentFields() {
+      const codec = profileVideoCodecSel.value;
+      proresProfileField.style.display = (codec === 'prores_ks') ? '' : 'none';
+      rebuildPixelFormatOptions(codec, profilePixelFormatSel.value);
+    }
+
+    profileVideoCodecSel.addEventListener('change', updateCodecDependentFields);
+
+    function updateFrameRateMode() {
+      const keepSourceRate = profileKeepFrameRateSel.value === 'source';
+      profileFpsSel.disabled = keepSourceRate;
+      profileFpsSel.title = keepSourceRate
+        ? 'Disabled because this profile keeps incoming/source frame rate.'
+        : '';
+    }
+
+    profileKeepFrameRateSel.addEventListener('change', updateFrameRateMode);
+
+    function sortedProfileKeys() {
+      return Object.keys(profilesState).sort((a, b) => a.localeCompare(b));
+    }
+
+    function inferOutputExtensionForCodec(codec) {
+      if (codec === 'mpeg2video') return 'mpg';
+      if (codec === 'libx264' || codec === 'libx265') return 'mp4';
+      return 'mov';
+    }
+
+    function profileDisplayLabel(key) {
+      const profile = profilesState[key] || {};
+      return `${profile.label || key} (${key})`;
+    }
+
+    function refreshSelect(preferredKey = '') {
+      const keys = sortedProfileKeys();
+      const prev = profileBuilderSelect.value;
+      profileBuilderSelect.innerHTML = '';
+
+      const newOption = document.createElement('option');
+      newOption.value = '';
+      newOption.textContent = 'New Profile...';
+      profileBuilderSelect.appendChild(newOption);
+
+      keys.forEach((key) => {
+        const option = document.createElement('option');
+        option.value = key;
+        option.textContent = profileDisplayLabel(key);
+        profileBuilderSelect.appendChild(option);
+      });
+
+      if (prev && keys.includes(prev)) {
+        profileBuilderSelect.value = prev;
+      } else if (preferredKey && keys.includes(preferredKey)) {
+        profileBuilderSelect.value = preferredKey;
+      } else if (keys.length > 0) {
+        profileBuilderSelect.value = keys[0];
+      } else {
+        profileBuilderSelect.value = '';
+      }
+    }
+
+    function loadProfileIntoForm(key) {
+      const profile = key ? (profilesState[key] || {}) : {};
+      profileKeyInput.value = key || '';
+      profileLabelInput.value = profile.label || '';
+
+      setSelectValue(profileResolutionSel, profile.resolution || '1920x1080');
+      setSelectValue(profileFpsSel, profile.fps || '30000/1001');
+      setSelectValue(
+        profileKeepFrameRateSel,
+        profile.keep_frame_rate ? 'source' : 'profile'
+      );
+      setSelectValue(profileVideoCodecSel, profile.video_codec || 'prores_ks');
+
+      // Rebuild codec-dependent fields before setting their values
+      const codec = profileVideoCodecSel.value;
+      proresProfileField.style.display = (codec === 'prores_ks') ? '' : 'none';
+      rebuildPixelFormatOptions(codec, profile.pixel_format || 'yuv422p10le');
+      setSelectValue(
+        profileOutputExtensionSel,
+        profile.output_extension || inferOutputExtensionForCodec(codec)
+      );
+
+      setSelectValue(profileProresProfileSel, String(profile.prores_profile ?? 2));
+      setSelectValue(profileAudioCodecSel, profile.audio_codec || 'pcm_s24le');
+      setSelectValue(profileAudioRateSel, String(profile.audio_rate ?? 48000));
+
+      profileBlackLeadSecInput.value    = String(profile.black_lead_sec ?? 1);
+      profileSlateSecInput.value        = String(profile.slate_sec ?? 5);
+      profileBlackPreSpotSecInput.value = String(profile.black_pre_spot_sec ?? 2);
+      profileBlackTailSecInput.value    = String(profile.black_tail_sec ?? 1);
+      updateFrameRateMode();
+    }
+
+    function buildProfilePayload() {
+      return {
+        source_key:        profileBuilderSelect.value,
+        key:               profileKeyInput.value.trim(),
+        label:             profileLabelInput.value.trim(),
+        resolution:        profileResolutionSel.value,
+        fps:               profileFpsSel.value,
+        keep_frame_rate:   profileKeepFrameRateSel.value === 'source',
+        video_codec:       profileVideoCodecSel.value,
+        output_extension:  profileOutputExtensionSel.value,
+        prores_profile:    profileProresProfileSel.value,
+        pixel_format:      profilePixelFormatSel.value,
+        audio_codec:       profileAudioCodecSel.value,
+        audio_rate:        profileAudioRateSel.value,
+        black_lead_sec:    profileBlackLeadSecInput.value,
+        slate_sec:         profileSlateSecInput.value,
+        black_pre_spot_sec: profileBlackPreSpotSecInput.value,
+        black_tail_sec:    profileBlackTailSecInput.value
+      };
+    }
+
+    profileBuilderSelect.addEventListener('change', () => {
+      loadProfileIntoForm(profileBuilderSelect.value);
+    });
+
+    loadProfileBtn.addEventListener('click', () => {
+      loadProfileIntoForm(profileBuilderSelect.value);
+    });
+
+    saveProfileBtn.addEventListener('click', async () => {
+      const payload = buildProfilePayload();
+      if (!payload.key) {
+        setStatus('Profile save error: Profile key is required.');
+        return;
+      }
+      saveProfileBtn.disabled = true;
+      setStatus('Saving profile...');
+      try {
+        const res = await fetch('/api/profiles/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          setStatus(`Profile save error: ${data.error || 'Unknown failure'}`);
+          return;
+        }
+        profilesState = data.profiles || profilesState;
+        refreshSelect(data.key);
+        loadProfileIntoForm(data.key);
+        profileBuilderSelect.value = data.key;
+        setStatus(`Profile saved: ${data.key}`);
+      } catch (err) {
+        setStatus(`Profile save error: ${err.message}`);
+      } finally {
+        saveProfileBtn.disabled = false;
+      }
+    });
+
+    deleteProfileBtn.addEventListener('click', async () => {
+      const key = profileKeyInput.value.trim();
+      if (!key) {
+        setStatus('Profile delete error: Enter or load a profile key first.');
+        return;
+      }
+      const confirmed = window.confirm(`Delete profile "${key}"?`);
+      if (!confirmed) return;
+
+      deleteProfileBtn.disabled = true;
+      setStatus('Deleting profile...');
+      try {
+        const res = await fetch('/api/profiles/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          setStatus(`Profile delete error: ${data.error || 'Unknown failure'}`);
+          return;
+        }
+        profilesState = data.profiles || {};
+        refreshSelect();
+        loadProfileIntoForm(profileBuilderSelect.value);
+        setStatus(`Profile deleted: ${data.deleted}`);
+      } catch (err) {
+        setStatus(`Profile delete error: ${err.message}`);
+      } finally {
+        deleteProfileBtn.disabled = false;
+      }
+    });
+
+    refreshSelect();
+    loadProfileIntoForm(profileBuilderSelect.value);
+  </script>
+</body>
+</html>

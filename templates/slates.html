@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spot Delivery Slate Library</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div class="hero-row">
+        <div>
+          <p class="kicker">Spot Delivery</p>
+          <h1>Slate Library</h1>
+          <p class="sub">Upload, view, and remove slate backgrounds used in Delivery Setup.</p>
+        </div>
+        <a class="secondary-btn nav-link" href="/">Back To Delivery</a>
+      </div>
+    </header>
+
+    <section class="panel">
+      <h2>Upload Slate Image</h2>
+      <div class="upload-controls">
+        <input id="slateUploadPicker" class="hidden-file-input" type="file" accept="image/*,.png,.jpg,.jpeg,.bmp,.tif,.tiff,.webp" />
+        <div class="upload-actions">
+          <button type="button" class="secondary-btn" id="pickSlateUploadBtn">Select Slate Image...</button>
+          <p class="hint">Supported: png, jpg/jpeg, bmp, tif/tiff, webp</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Available Slates</h2>
+      <p class="hint">These choices appear in the delivery app slate background dropdown.</p>
+      <div class="actions">
+        <button type="button" class="secondary-btn" id="refreshSlatesBtn">Refresh List</button>
+      </div>
+      <div id="slatesList" class="slates-list"></div>
+    </section>
+
+    <section class="panel" id="statusPanel">
+      <h2>Status</h2>
+      <pre id="statusText">Ready.</pre>
+    </section>
+  </main>
+
+  <script>
+    const statusText = document.getElementById('statusText');
+    const slatesList = document.getElementById('slatesList');
+    const slateUploadPicker = document.getElementById('slateUploadPicker');
+    const pickSlateUploadBtn = document.getElementById('pickSlateUploadBtn');
+    const refreshSlatesBtn = document.getElementById('refreshSlatesBtn');
+
+    function setStatus(message) {
+      statusText.textContent = message;
+    }
+
+    function renderSlates(slates) {
+      slatesList.innerHTML = '';
+      if (!slates || slates.length === 0) {
+        slatesList.innerHTML = '<p class="hint">No slate backgrounds uploaded yet.</p>';
+        return;
+      }
+
+      slates.forEach((slate) => {
+        const row = document.createElement('div');
+        row.className = 'download-row';
+
+        const label = document.createElement('span');
+        label.className = 'download-label';
+        label.textContent = `${slate.name} (${Math.round((slate.size_bytes || 0) / 1024)} KB)`;
+
+        const actions = document.createElement('div');
+        actions.className = 'upload-actions';
+
+        const path = document.createElement('span');
+        path.className = 'hint';
+        path.textContent = slate.path;
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'danger-btn';
+        removeBtn.textContent = 'Delete';
+        removeBtn.addEventListener('click', () => deleteSlate(slate.path, slate.name));
+
+        actions.appendChild(path);
+        actions.appendChild(removeBtn);
+        row.appendChild(label);
+        row.appendChild(actions);
+        slatesList.appendChild(row);
+      });
+    }
+
+    async function loadSlates() {
+      try {
+        const res = await fetch('/api/slates');
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          setStatus(`Slate list error: ${data.error || 'Unknown failure'}`);
+          return;
+        }
+        renderSlates(data.slates || []);
+      } catch (err) {
+        setStatus(`Slate list error: ${err.message}`);
+      }
+    }
+
+    async function uploadSlate(file) {
+      if (!file) return;
+      try {
+        setStatus(`Uploading ${file.name}...`);
+        const payload = new FormData();
+        payload.append('file', file, file.name);
+
+        const res = await fetch('/api/upload-slate-background', {
+          method: 'POST',
+          body: payload
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          setStatus(`Slate upload error: ${data.error || 'Unknown failure'}`);
+          return;
+        }
+        renderSlates(data.slates || []);
+        setStatus(`Slate uploaded: ${file.name}`);
+      } catch (err) {
+        setStatus(`Slate upload error: ${err.message}`);
+      }
+    }
+
+    async function deleteSlate(path, name) {
+      const confirmed = window.confirm(`Delete slate "${name}"?`);
+      if (!confirmed) return;
+
+      try {
+        setStatus(`Deleting ${name}...`);
+        const res = await fetch('/api/slates/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          setStatus(`Slate delete error: ${data.error || 'Unknown failure'}`);
+          return;
+        }
+        renderSlates(data.slates || []);
+        setStatus(`Slate deleted: ${name}`);
+      } catch (err) {
+        setStatus(`Slate delete error: ${err.message}`);
+      }
+    }
+
+    pickSlateUploadBtn.addEventListener('click', () => {
+      slateUploadPicker.click();
+    });
+
+    slateUploadPicker.addEventListener('change', () => {
+      const file = slateUploadPicker.files && slateUploadPicker.files[0];
+      slateUploadPicker.value = '';
+      uploadSlate(file);
+    });
+
+    refreshSlatesBtn.addEventListener('click', loadSlates);
+
+    loadSlates();
+  </script>
+</body>
+</html>
