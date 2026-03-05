@@ -14,7 +14,8 @@
       "prores_profile": 2,
       "pixel_format": "yuv422p",
       "audio_codec": "pcm_s24le",
-      "audio_rate": 48000
+      "audio_rate": 48000,
+      "slate_text_color": "#FFFFFF"
     },
     "online_master": {
       "label": "Online Master",
@@ -30,7 +31,8 @@
       "prores_profile": 2,
       "pixel_format": "yuv422p10le",
       "audio_codec": "pcm_s24le",
-      "audio_rate": 48000
+      "audio_rate": 48000,
+      "slate_text_color": "#FFFFFF"
     }
   }
 }

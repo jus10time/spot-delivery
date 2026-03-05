@@ -400,6 +400,34 @@ def normalize_resolution(value: Any, fallback: str = '1920x1080') -> Tuple[str, 
     return f'{fw}x{fh}', f'{fw}:{fh}'
 
 
+def normalize_hex_color(value: Any, fallback: str = '#FFFFFF') -> str:
+    fallback_raw = str(fallback or '#FFFFFF').strip()
+    if fallback_raw.startswith('#'):
+        fallback_hex = fallback_raw[1:]
+    elif fallback_raw.lower().startswith('0x'):
+        fallback_hex = fallback_raw[2:]
+    else:
+        fallback_hex = fallback_raw
+    if not re.fullmatch(r'[0-9A-Fa-f]{6}', fallback_hex):
+        fallback_hex = 'FFFFFF'
+
+    raw = str(value or '').strip()
+    if raw.startswith('#'):
+        candidate = raw[1:]
+    elif raw.lower().startswith('0x'):
+        candidate = raw[2:]
+    else:
+        candidate = raw
+    if not re.fullmatch(r'[0-9A-Fa-f]{6}', candidate):
+        candidate = fallback_hex
+    return f'#{candidate.upper()}'
+
+
+def to_ffmpeg_font_color(value: Any, fallback: str = '#FFFFFF') -> str:
+    normalized = normalize_hex_color(value, fallback)
+    return f'0x{normalized[1:]}'
+
+
 def build_slate_drawtext_ops(
     profile: Dict[str, Any],
     slate: Dict[str, str],
@@ -429,6 +457,8 @@ def build_slate_drawtext_ops(
         slate_layout.get('header_size'),
         normalize_int(profile.get('slate_header_size', 70), 70),
     )
+    profile_text_color = normalize_hex_color(profile.get('slate_text_color', '#FFFFFF'), '#FFFFFF')
+    font_color = to_ffmpeg_font_color(slate_layout.get('text_color'), profile_text_color)
 
     header = ffmpeg_escape(slate.get('client', '').strip() or 'CLIENT')
     lines = [
@@ -441,18 +471,18 @@ def build_slate_drawtext_ops(
     ]
     draw_ops = [
         (
-            "drawtext=fontcolor=white:fontsize={size}:x=(w-text_w)/2:y={y}:"
+            "drawtext=fontcolor={font_color}:fontsize={size}:x=(w-text_w)/2:y={y}:"
             "text='{text}'"
-        ).format(size=header_size, y=header_y, text=header)
+        ).format(font_color=font_color, size=header_size, y=header_y, text=header)
     ]
     for idx, (label, value) in enumerate(lines):
         y = top_y + (idx * line_gap)
         text = ffmpeg_escape(f'{label}: {value or "-"}')
         draw_ops.append(
             (
-                "drawtext=fontcolor=white:fontsize={size}:x={x}:y={y}:"
+                "drawtext=fontcolor={font_color}:fontsize={size}:x={x}:y={y}:"
                 "text='{text}'"
-            ).format(size=font_size, x=left_x, y=y, text=text)
+            ).format(font_color=font_color, size=font_size, x=left_x, y=y, text=text)
         )
     return draw_ops
 
@@ -512,6 +542,10 @@ def build_profile_payload(payload: Dict[str, Any], existing: Dict[str, Any] | No
     current['audio_rate'] = max(
         1,
         normalize_int(payload.get('audio_rate', current.get('audio_rate', 48000)), 48000),
+    )
+    current['slate_text_color'] = normalize_hex_color(
+        payload.get('slate_text_color', current.get('slate_text_color', '#FFFFFF')),
+        '#FFFFFF',
     )
     return current
 

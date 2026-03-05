@@ -146,6 +146,11 @@
         <input id="profile_black_tail_sec" type="number" step="0.1" value="1" />
       </div>
 
+      <div class="field">
+        <label for="profile_slate_text_color">Slate Text Color</label>
+        <input id="profile_slate_text_color" type="color" value="#ffffff" />
+      </div>
+
       <div class="wide actions">
         <button type="button" class="secondary-btn" id="loadProfileBtn">Load</button>
         <button type="button" id="saveProfileBtn">Save Profile</button>
@@ -218,6 +223,7 @@
     const profileSlateSecInput         = document.getElementById('profile_slate_sec');
     const profileBlackPreSpotSecInput  = document.getElementById('profile_black_pre_spot_sec');
     const profileBlackTailSecInput     = document.getElementById('profile_black_tail_sec');
+    const profileSlateTextColorInput   = document.getElementById('profile_slate_text_color');
     const proresProfileField    = document.getElementById('proresProfileField');
 
     function setStatus(message) {
@@ -235,6 +241,14 @@
         selectEl.appendChild(opt);
         selectEl.value = str;
       }
+    }
+
+    function normalizeColorInputValue(value, fallback = '#ffffff') {
+      const raw = String(value || '').trim().toLowerCase();
+      if (/^#[0-9a-f]{6}$/.test(raw)) return raw;
+      if (/^0x[0-9a-f]{6}$/.test(raw)) return `#${raw.slice(2)}`;
+      if (/^[0-9a-f]{6}$/.test(raw)) return `#${raw}`;
+      return fallback;
     }
 
     function rebuildPixelFormatOptions(codec, currentValue) {
@@ -340,6 +354,7 @@
       profileSlateSecInput.value        = String(profile.slate_sec ?? 5);
       profileBlackPreSpotSecInput.value = String(profile.black_pre_spot_sec ?? 2);
       profileBlackTailSecInput.value    = String(profile.black_tail_sec ?? 1);
+      profileSlateTextColorInput.value  = normalizeColorInputValue(profile.slate_text_color, '#ffffff');
       updateFrameRateMode();
     }
 
@@ -360,7 +375,8 @@
         black_lead_sec:    profileBlackLeadSecInput.value,
         slate_sec:         profileSlateSecInput.value,
         black_pre_spot_sec: profileBlackPreSpotSecInput.value,
-        black_tail_sec:    profileBlackTailSecInput.value
+        black_tail_sec:    profileBlackTailSecInput.value,
+        slate_text_color:  profileSlateTextColorInput.value
       };
     }
 

@@ -12,6 +12,7 @@ Status checkpoint: see `STATUS.md` for the current deployment/features snapshot.
 - Can generate one or two deliverables in one run
 - Includes a Profile Builder UI to create/update/delete deliverable templates
 - Includes Slate Preview to render a quick preview frame before full output
+- Includes slate text color selection (with profile default)
 - Supports source selection by file upload/drag-and-drop in the web UI (works on Linux servers)
 - Provides one-click download links in the web UI for newly rendered deliverables
 - Includes a Slate Library page to manage dropdown choices for slate backgrounds
